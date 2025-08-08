@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Healthcare Platform{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-heartbeat"></i>
+                HealthCare AI
+            </a>
+            <ul class="nav-menu">
+                <li><a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </a></li>
+                <li><a href="/chat" class="nav-link {% if request.endpoint == 'chat_page' %}active{% endif %}">
+                    <i class="fas fa-comments"></i> Chat
+                </a></li>
+                <li><a href="/meeting-minutes" class="nav-link {% if request.endpoint == 'meeting_minutes_page' %}active{% endif %}">
+                    <i class="fas fa-microphone"></i> Meeting Minutes
+                </a></li>
+                <li><a href="/translate" class="nav-link {% if request.endpoint == 'translate_page' %}active{% endif %}">
+                    <i class="fas fa-language"></i> Translate
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html> 

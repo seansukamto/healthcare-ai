@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}AI Chat - Healthcare Platform{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">AI Assistant</div>
+            <div class="card-description">Choose your interaction type</div>
+        </div>
+        
+        <div class="sidebar-tabs">
+            <button class="sidebar-tab active" onclick="switchTab('chat')">
+                <i class="fas fa-comments"></i> Chat
+            </button>
+            <button class="sidebar-tab" onclick="switchTab('medical')">
+                <i class="fas fa-file-medical"></i> Medical Records
+            </button>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- Chat Tab Content -->
+            <div id="chat-tab" class="tab-content">
+                <div class="mb-3">
+                    <h4 class="font-semibold mb-2">General Health Chat</h4>
+                    <p class="text-sm text-gray-600">Ask me about general health questions, symptoms, or medical advice.</p>
+                </div>
+                <div class="mb-3">
+                    <h4 class="font-semibold mb-2">Quick Actions</h4>
+                    <div class="space-y-2">
+                        <button class="btn btn-secondary w-full text-left" onclick="sendQuickMessage('What are the symptoms of diabetes?')">
+                            <i class="fas fa-question-circle"></i> Diabetes Symptoms
+                        </button>
+                        <button class="btn btn-secondary w-full text-left" onclick="sendQuickMessage('How to maintain a healthy diet?')">
+                            <i class="fas fa-apple-alt"></i> Healthy Diet Tips
+                        </button>
+                        <button class="btn btn-secondary w-full text-left" onclick="sendQuickMessage('What exercises are good for heart health?')">
+                            <i class="fas fa-heart"></i> Heart Health Exercise
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Medical Records Tab Content -->
+            <div id="medical-tab" class="tab-content hidden">
+                <div class="mb-3">
+                    <h4 class="font-semibold mb-2">Upload Medical Records</h4>
+                    <p class="text-sm text-gray-600">Upload PDF medical documents to get AI analysis and answers.</p>
+                </div>
+                
+                <div class="file-upload" onclick="document.getElementById('medical-file').click()">
+                    <input type="file" id="medical-file" accept=".pdf,.txt,.doc,.docx" onchange="handleFileUpload(event)">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">Click to upload medical records</div>
+                    <div class="upload-hint">Supports PDF, TXT, DOC, DOCX</div>
+                </div>
+                
+                <div id="upload-status" class="mt-3 hidden">
+                    <div class="text-sm font-medium text-green-600">
+                        <i class="fas fa-check-circle"></i> File uploaded successfully
+                    </div>
+                </div>
+                
+                <div id="medical-history" class="mt-3 hidden">
+                    <h4 class="font-semibold mb-2">Medical History</h4>
+                    <div id="history-text" class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg max-h-40 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Main Area -->
+    <div class="chat-main">
+        <div class="chat-header">
+            <h2 id="chat-title">AI Health Assistant</h2>
+            <p id="chat-subtitle">Ask me anything about health and wellness</p>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot">
+                <div class="message-content">
+                    Hello! I'm your AI health assistant. I can help you with general health questions, analyze medical records, and provide medical guidance. How can I assist you today?
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <div class="input-group">
+                <input type="text" id="message-input" class="chat-input-field" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentTab = 'chat';
+let medicalHistory = '';
+
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update tab buttons
+    document.querySelectorAll('.sidebar-tab').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    document.getElementById(tab + '-tab').classList.remove('hidden');
+    
+    // Update chat header
+    if (tab === 'chat') {
+        document.getElementById('chat-title').textContent = 'AI Health Assistant';
+        document.getElementById('chat-subtitle').textContent = 'Ask me anything about health and wellness';
+    } else {
+        document.getElementById('chat-title').textContent = 'Medical Records Analysis';
+        document.getElementById('chat-subtitle').textContent = 'Upload and analyze medical documents';
+    }
+}
+
+function sendQuickMessage(message) {
+    document.getElementById('message-input').value = message;
+    sendMessage();
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+function sendMessage() {
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message to chat
+    addMessage(message, 'user');
+    input.value = '';
+    
+    // Show loading indicator
+    const loadingId = addLoadingMessage();
+    
+    // Send to appropriate API endpoint
+    const endpoint = currentTab === 'medical' ? '/api/medical-chat' : '/api/chat';
+    const data = currentTab === 'medical' ? 
+        { message: message, medical_history: medicalHistory } : 
+        { message: message };
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        removeLoadingMessage(loadingId);
+        if (data.error) {
+            addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+        } else {
+            // Use HTML response if available (for both chat and medical chat), otherwise use regular response
+            const responseContent = data.response_html ? data.response_html : data.response;
+            const useHTML = data.response_html ? true : false;
+            addMessage(responseContent, 'bot', useHTML);
+        }
+    })
+    .catch(error => {
+        removeLoadingMessage(loadingId);
+        addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+        console.error('Error:', error);
+    });
+}
+
+function addMessage(content, sender, useHTML = false) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}`;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    
+    if (useHTML) {
+        contentDiv.innerHTML = content;
+    } else {
+        contentDiv.textContent = content;
+    }
+    
+    messageDiv.appendChild(contentDiv);
+    messagesContainer.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function addLoadingMessage() {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message bot';
+    messageDiv.id = 'loading-message';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.innerHTML = '<div class="loading"></div> Thinking...';
+    
+    messageDiv.appendChild(contentDiv);
+    messagesContainer.appendChild(messageDiv);
+    
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    return 'loading-message';
+}
+
+function removeLoadingMessage(id) {
+    const loadingMessage = document.getElementById(id);
+    if (loadingMessage) {
+        loadingMessage.remove();
+    }
+}
+
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Show upload status
+    document.getElementById('upload-status').classList.remove('hidden');
+    
+    fetch('/api/upload-medical-record', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error uploading file: ' + data.error);
+        } else {
+            medicalHistory = data.extracted_text;
+            document.getElementById('history-text').textContent = data.extracted_text.substring(0, 200) + '...';
+            document.getElementById('medical-history').classList.remove('hidden');
+            
+            // Add system message
+            addMessage('Medical record uploaded successfully. You can now ask questions about this document.', 'bot');
+        }
+    })
+    .catch(error => {
+        alert('Error uploading file: ' + error);
+        console.error('Error:', error);
+    });
+}
+</script>
+{% endblock %} 

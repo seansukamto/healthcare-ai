@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Healthcare Platform{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Welcome Card -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <div>
+                <div class="card-title">Welcome Back, Doctor</div>
+                <div class="card-description">Here's your healthcare overview</div>
+            </div>
+        </div>
+        <div class="card-value">Good Morning!</div>
+        <div class="card-description">Ready to provide excellent patient care today</div>
+    </div>
+
+    <!-- Patient Appointments -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div>
+                <div class="card-title">Today's Appointments</div>
+                <div class="card-description">Scheduled patient visits</div>
+            </div>
+        </div>
+        <div class="card-value">12</div>
+        <div class="card-description">3 completed, 9 remaining</div>
+    </div>
+
+    <!-- AI Consultations -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div>
+                <div class="card-title">AI Consultations</div>
+                <div class="card-description">Chat sessions today</div>
+            </div>
+        </div>
+        <div class="card-value">47</div>
+        <div class="card-description">+12% from yesterday</div>
+    </div>
+
+    <!-- Medical Records -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-file-medical"></i>
+            </div>
+            <div>
+                <div class="card-title">Medical Records</div>
+                <div class="card-description">Documents processed</div>
+            </div>
+        </div>
+        <div class="card-value">156</div>
+        <div class="card-description">This week</div>
+    </div>
+
+    <!-- Meeting Minutes -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-microphone-alt"></i>
+            </div>
+            <div>
+                <div class="card-title">Meeting Minutes</div>
+                <div class="card-description">Generated this week</div>
+            </div>
+        </div>
+        <div class="card-value">8</div>
+        <div class="card-description">Last generated: 2 hours ago</div>
+    </div>
+
+    <!-- Patient Satisfaction -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-star"></i>
+            </div>
+            <div>
+                <div class="card-title">Patient Satisfaction</div>
+                <div class="card-description">Average rating</div>
+            </div>
+        </div>
+        <div class="card-value">4.8</div>
+        <div class="card-description">Out of 5.0 stars</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="card-icon">
+            <i class="fas fa-bolt"></i>
+        </div>
+        <div>
+            <div class="card-title">Quick Actions</div>
+            <div class="card-description">Access frequently used features</div>
+        </div>
+    </div>
+    <div class="flex gap-4 flex-wrap">
+        <a href="/chat" class="btn btn-primary">
+            <i class="fas fa-comments"></i> Start AI Chat
+        </a>
+        <a href="/meeting-minutes" class="btn btn-secondary">
+            <i class="fas fa-microphone"></i> Record Meeting
+        </a>
+        <a href="/chat" class="btn btn-secondary">
+            <i class="fas fa-file-upload"></i> Upload Medical Records
+        </a>
+        <a href="/translate" class="btn btn-secondary">
+            <i class="fas fa-language"></i> Translate Documents
+        </a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-icon">
+            <i class="fas fa-history"></i>
+        </div>
+        <div>
+            <div class="card-title">Recent Activity</div>
+            <div class="card-description">Latest actions and updates</div>
+        </div>
+    </div>
+    <div class="space-y-3">
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div>
+                <div class="font-medium">AI consultation completed</div>
+                <div class="text-sm text-gray-600">Patient query about diabetes management</div>
+            </div>
+            <div class="text-sm text-gray-500 ml-auto">2 min ago</div>
+        </div>
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div>
+                <div class="font-medium">Medical record uploaded</div>
+                <div class="text-sm text-gray-600">Patient X-ray results processed</div>
+            </div>
+            <div class="text-sm text-gray-500 ml-auto">15 min ago</div>
+        </div>
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
+            <div>
+                <div class="font-medium">Meeting minutes generated</div>
+                <div class="text-sm text-gray-600">Staff meeting - Cardiology department</div>
+            </div>
+            <div class="text-sm text-gray-500 ml-auto">1 hour ago</div>
+        </div>
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+            <div>
+                <div class="font-medium">New appointment scheduled</div>
+                <div class="text-sm text-gray-600">Dr. Smith - Patient consultation</div>
+            </div>
+            <div class="text-sm text-gray-500 ml-auto">2 hours ago</div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

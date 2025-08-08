@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+
+{% block title %}Meeting Minutes - Healthcare Platform{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Meeting Minutes Generator</h1>
+    <p class="text-gray-600">Record your meetings and get AI-generated minutes automatically</p>
+</div>
+
+<!-- Browser Compatibility Warning -->
+<div id="browser-warning" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-yellow-800">Browser Compatibility Notice</h3>
+            <div class="mt-2 text-sm text-yellow-700">
+                <p>Audio recording requires a secure context. For local development, please use:</p>
+                <ul class="list-disc list-inside mt-1">
+                    <li><strong>localhost</strong> - Access via <code>http://localhost:5000</code> (recommended for development)</li>
+                    <li><strong>HTTPS</strong> - For production environments</li>
+                </ul>
+                <p class="mt-2 text-xs text-gray-600">Note: localhost is considered a secure context and allows microphone access without HTTPS.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recording Section -->
+<div class="recording-container">
+    <button id="record-btn" class="record-btn" onclick="toggleRecording()">
+        <i class="fas fa-microphone"></i>
+    </button>
+    <div class="recording-status" id="recording-status">Click to start recording</div>
+    <div class="recording-time" id="recording-time">00:00</div>
+    
+    <div class="mt-4">
+        <button id="generate-btn" class="btn btn-primary hidden" onclick="generateMinutes()">
+            <i class="fas fa-magic"></i> Generate Meeting Minutes
+        </button>
+        <button id="download-btn" class="btn btn-secondary hidden" onclick="downloadMinutes()">
+            <i class="fas fa-download"></i> Download Minutes
+        </button>
+    </div>
+</div>
+
+<!-- Transcript Section -->
+<div class="transcript-container hidden" id="transcript-container">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xl font-semibold">Meeting Transcript</h3>
+        <button class="btn btn-secondary" onclick="copyTranscript()">
+            <i class="fas fa-copy"></i> Copy
+        </button>
+    </div>
+    <div class="transcript-text" id="transcript-text">
+        <!-- Transcript will be displayed here -->
+    </div>
+</div>
+
+<!-- Meeting Minutes Section -->
+<div class="minutes-container hidden" id="minutes-container">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xl font-semibold">Generated Meeting Minutes</h3>
+        <div class="flex gap-2">
+            <button class="btn btn-secondary" onclick="copyMinutes()">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+            <button class="btn btn-primary" onclick="regenerateMinutes()">
+                <i class="fas fa-redo"></i> Regenerate
+            </button>
+        </div>
+    </div>
+    <div class="minutes-text" id="minutes-text">
+        <!-- Meeting minutes will be displayed here -->
+    </div>
+</div>
+
+<!-- Instructions -->
+<div class="card mt-4">
+    <div class="card-header">
+        <div class="card-icon">
+            <i class="fas fa-info-circle"></i>
+        </div>
+        <div>
+            <div class="card-title">How to Use</div>
+            <div class="card-description">Step-by-step instructions</div>
+        </div>
+    </div>
+    <div class="space-y-3">
+        <div class="flex items-start gap-3">
+            <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+            <div>
+                <div class="font-medium">Start Recording</div>
+                <div class="text-sm text-gray-600">Click the red microphone button to begin recording your meeting</div>
+            </div>
+        </div>
+        <div class="flex items-start gap-3">
+            <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+            <div>
+                <div class="font-medium">Stop Recording</div>
+                <div class="text-sm text-gray-600">Click the green button to stop recording when the meeting ends</div>
+            </div>
+        </div>
+        <div class="flex items-start gap-3">
+            <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+            <div>
+                <div class="font-medium">Review Transcript</div>
+                <div class="text-sm text-gray-600">The system will automatically transcribe your audio</div>
+            </div>
+        </div>
+        <div class="flex items-start gap-3">
+            <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
+            <div>
+                <div class="font-medium">Generate Minutes</div>
+                <div class="text-sm text-gray-600">Click "Generate Meeting Minutes" to create AI-powered meeting summaries</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let isRecording = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingInterval = null;
+let recordingTime = 0;
+let transcript = '';
+let meetingMinutes = '';
+
+// Check browser compatibility on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkBrowserCompatibility();
+});
+
+function checkBrowserCompatibility() {
+    // Check if getUserMedia is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showBrowserWarning('Your browser does not support audio recording. Please use a modern browser like Chrome, Firefox, or Safari.');
+        return false;
+    }
+    
+    // Check if we're on localhost (which allows HTTP for media access)
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.hostname === '::1';
+    
+    // Check if we're on HTTPS or localhost (both are secure contexts)
+    const isSecure = window.location.protocol === 'https:' || isLocalhost;
+    
+    if (!isSecure) {
+        showBrowserWarning('Audio recording requires a secure connection (HTTPS) or localhost. For development, please use localhost.');
+        return false;
+    }
+    
+    return true;
+}
+
+function showBrowserWarning(message) {
+    const warningDiv = document.getElementById('browser-warning');
+    const warningText = warningDiv.querySelector('.text-yellow-700 p');
+    warningText.textContent = message;
+    warningDiv.classList.remove('hidden');
+}
+
+function toggleRecording() {
+    if (!isRecording) {
+        startRecording();
+    } else {
+        stopRecording();
+    }
+}
+
+function startRecording() {
+    // Check compatibility first
+    if (!checkBrowserCompatibility()) {
+        return;
+    }
+    
+    // Check if getUserMedia is available
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showNotification('Audio recording is not supported in your browser. Please use Chrome, Firefox, or Safari.', 'error');
+        return;
+    }
+    
+    // Request microphone access with proper error handling
+    navigator.mediaDevices.getUserMedia({ 
+        audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+        } 
+    })
+    .then(stream => {
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+        };
+        
+        mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            uploadAudio(audioBlob);
+        };
+        
+        mediaRecorder.onerror = (event) => {
+            console.error('MediaRecorder error:', event);
+            showNotification('Error during recording. Please try again.', 'error');
+            stopRecording();
+        };
+        
+        mediaRecorder.start();
+        isRecording = true;
+        
+        // Update UI
+        document.getElementById('record-btn').classList.add('recording');
+        document.getElementById('record-btn').innerHTML = '<i class="fas fa-stop"></i>';
+        document.getElementById('recording-status').textContent = 'Recording...';
+        
+        // Start timer
+        recordingTime = 0;
+        recordingInterval = setInterval(updateTimer, 1000);
+        
+        showNotification('Recording started successfully!', 'success');
+    })
+    .catch(error => {
+        console.error('Error accessing microphone:', error);
+        
+        let errorMessage = 'Error accessing microphone. ';
+        
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Please allow microphone access and try again.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'No microphone found. Please connect a microphone and try again.';
+        } else if (error.name === 'NotSupportedError') {
+            errorMessage += 'Audio recording is not supported in your browser.';
+        } else if (error.name === 'SecurityError') {
+            errorMessage += 'Audio recording requires HTTPS or localhost. Please use localhost for development.';
+        } else {
+            errorMessage += 'Please make sure you have granted microphone permissions.';
+        }
+        
+        showNotification(errorMessage, 'error');
+    });
+}
+
+function stopRecording() {
+    if (mediaRecorder && isRecording) {
+        try {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            
+            isRecording = false;
+            
+            // Update UI
+            document.getElementById('record-btn').classList.remove('recording');
+            document.getElementById('record-btn').innerHTML = '<i class="fas fa-microphone"></i>';
+            document.getElementById('recording-status').textContent = 'Processing audio...';
+            
+            // Stop timer
+            clearInterval(recordingInterval);
+            
+            showNotification('Recording stopped. Processing audio...', 'info');
+        } catch (error) {
+            console.error('Error stopping recording:', error);
+            showNotification('Error stopping recording. Please try again.', 'error');
+        }
+    }
+}
+
+function updateTimer() {
+    recordingTime++;
+    const minutes = Math.floor(recordingTime / 60);
+    const seconds = recordingTime % 60;
+    document.getElementById('recording-time').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+async function uploadAudio(audioBlob) {
+    document.getElementById('recording-status').textContent = 'Converting audio...';
+    
+    try {
+        // Convert WebM to WAV using JavaScript AudioContext
+        const wavBlob = await convertWebMToWAV(audioBlob);
+        
+        document.getElementById('recording-status').textContent = 'Transcribing audio...';
+        
+        // Create FormData to send the converted WAV file
+        const formData = new FormData();
+        formData.append('audio', wavBlob, 'recording.wav');
+        
+        // Add retry logic for connection issues
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        function attemptUpload() {
+            return fetch('/api/transcribe-audio', {
+                method: 'POST',
+                body: formData,
+                signal: AbortSignal.timeout(60000) // 60 second timeout
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('recording-status').textContent = 'Error: ' + data.error;
+                    showNotification('Error transcribing audio: ' + data.error, 'error');
+                } else {
+                    transcript = data.transcript;
+                    document.getElementById('transcript-text').textContent = transcript;
+                    document.getElementById('transcript-container').classList.remove('hidden');
+                    document.getElementById('generate-btn').classList.remove('hidden');
+                    document.getElementById('recording-status').textContent = 'Transcription complete!';
+                    showNotification('Audio transcribed successfully!', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Upload attempt failed:', error);
+                
+                // Check if it's a connection reset or network error
+                if ((error.name === 'TypeError' && error.message.includes('fetch')) || 
+                    error.message.includes('ERR_CONNECTION_RESET') ||
+                    error.message.includes('Failed to fetch')) {
+                    
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        document.getElementById('recording-status').textContent = `Connection issue, retrying... (${retryCount}/${maxRetries})`;
+                        
+                        setTimeout(() => {
+                            attemptUpload();
+                        }, 2000);
+                        return;
+                    }
+                }
+                
+                // If all retries failed or it's a different error
+                document.getElementById('recording-status').textContent = 'Error transcribing audio';
+                
+                let errorMessage = 'Error transcribing audio. ';
+                if (error.message.includes('timeout')) {
+                    errorMessage += 'Request timed out. Please try recording a shorter audio clip.';
+                } else if (error.message.includes('fetch') || error.message.includes('ERR_CONNECTION_RESET')) {
+                    errorMessage += 'Connection issue. Please check your internet connection and try again.';
+                } else {
+                    errorMessage += 'Please try again.';
+                }
+                
+                showNotification(errorMessage, 'error');
+            });
+        }
+        
+        // Start the upload attempt
+        attemptUpload();
+        
+    } catch (conversionError) {
+        console.error('Audio conversion failed:', conversionError);
+        document.getElementById('recording-status').textContent = 'Error converting audio';
+        showNotification('Failed to convert audio format. Please try again.', 'error');
+    }
+}
+
+// JavaScript-based WebM to WAV conversion using Web Audio API
+async function convertWebMToWAV(webmBlob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = async function(e) {
+            try {
+                const arrayBuffer = e.target.result;
+                
+                // Create audio context
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Decode the audio data
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // Convert to WAV format
+                const wavArrayBuffer = audioBufferToWav(audioBuffer);
+                const wavBlob = new Blob([wavArrayBuffer], { type: 'audio/wav' });
+                
+                resolve(wavBlob);
+            } catch (error) {
+                console.error('Audio decoding failed:', error);
+                reject(error);
+            }
+        };
+        
+        reader.onerror = () => reject(new Error('Failed to read audio file'));
+        reader.readAsArrayBuffer(webmBlob);
+    });
+}
+
+// Convert AudioBuffer to WAV format
+function audioBufferToWav(audioBuffer) {
+    const numChannels = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+    const format = 1; // PCM
+    const bitDepth = 16;
+    
+    const bytesPerSample = bitDepth / 8;
+    const blockAlign = numChannels * bytesPerSample;
+    
+    // Get audio data
+    const audioData = [];
+    for (let i = 0; i < numChannels; i++) {
+        audioData.push(audioBuffer.getChannelData(i));
+    }
+    
+    // Calculate sizes
+    const dataLength = audioBuffer.length * blockAlign;
+    const headerLength = 44;
+    const totalLength = headerLength + dataLength;
+    
+    // Create WAV file buffer
+    const arrayBuffer = new ArrayBuffer(totalLength);
+    const view = new DataView(arrayBuffer);
+    
+    // Write WAV header
+    const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, totalLength - 8, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true); // Subchunk1Size
+    view.setUint16(20, format, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * blockAlign, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitDepth, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataLength, true);
+    
+    // Write audio data
+    let offset = headerLength;
+    for (let i = 0; i < audioBuffer.length; i++) {
+        for (let channel = 0; channel < numChannels; channel++) {
+            const sample = audioData[channel][i];
+            const int16Sample = Math.max(-1, Math.min(1, sample)) * 0x7FFF;
+            view.setInt16(offset, int16Sample, true);
+            offset += 2;
+        }
+    }
+    
+    return arrayBuffer;
+}
+
+function generateMinutes() {
+    if (!transcript) {
+        showNotification('No transcript available. Please record a meeting first.', 'warning');
+        return;
+    }
+    
+    document.getElementById('generate-btn').innerHTML = '<div class="loading"></div> Generating...';
+    document.getElementById('generate-btn').disabled = true;
+    
+    fetch('/api/generate-meeting-minutes', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transcript: transcript })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        document.getElementById('generate-btn').innerHTML = '<i class="fas fa-magic"></i> Generate Meeting Minutes';
+        document.getElementById('generate-btn').disabled = false;
+        
+        if (data.error) {
+            showNotification('Error generating minutes: ' + data.error, 'error');
+        } else {
+            meetingMinutes = data.minutes; // Raw markdown for copying/downloading
+            const minutesHtml = data.minutes_html; // HTML for display
+            document.getElementById('minutes-text').innerHTML = minutesHtml;
+            document.getElementById('minutes-container').classList.remove('hidden');
+            document.getElementById('download-btn').classList.remove('hidden');
+            showNotification('Meeting minutes generated successfully!', 'success');
+        }
+    })
+    .catch(error => {
+        document.getElementById('generate-btn').innerHTML = '<i class="fas fa-magic"></i> Generate Meeting Minutes';
+        document.getElementById('generate-btn').disabled = false;
+        showNotification('Error generating minutes: ' + error.message, 'error');
+        console.error('Error:', error);
+    });
+}
+
+function copyTranscript() {
+    if (!transcript) {
+        showNotification('No transcript available to copy.', 'warning');
+        return;
+    }
+    
+    navigator.clipboard.writeText(transcript).then(() => {
+        showNotification('Transcript copied to clipboard!', 'success');
+    }).catch(() => {
+        showNotification('Failed to copy transcript', 'error');
+    });
+}
+
+function copyMinutes() {
+    if (!meetingMinutes) {
+        showNotification('No meeting minutes available to copy.', 'warning');
+        return;
+    }
+    
+    navigator.clipboard.writeText(meetingMinutes).then(() => {
+        showNotification('Meeting minutes copied to clipboard!', 'success');
+    }).catch(() => {
+        showNotification('Failed to copy meeting minutes', 'error');
+    });
+}
+
+function regenerateMinutes() {
+    generateMinutes();
+}
+
+function downloadMinutes() {
+    if (!meetingMinutes) {
+        showNotification('No meeting minutes available to download.', 'warning');
+        return;
+    }
+    
+    const blob = new Blob([meetingMinutes], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `meeting-minutes-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showNotification('Meeting minutes downloaded successfully!', 'success');
+}
+
+// Enhanced notification function
+function showNotification(message, type = 'info') {
+    if (window.HealthcareUtils && window.HealthcareUtils.showNotification) {
+        window.HealthcareUtils.showNotification(message, type);
+    } else {
+        // Fallback notification
+        alert(message);
+    }
+}
+</script>
+{% endblock %} 
