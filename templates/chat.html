@@ -28,17 +28,22 @@
                     <p class="text-sm text-gray-600">Ask me about general health questions, symptoms, or medical advice.</p>
                 </div>
                 <div class="mb-3">
-                    <h4 class="font-semibold mb-2">Quick Actions</h4>
-                    <div class="space-y-2">
-                        <button class="btn btn-secondary w-full text-left" onclick="sendQuickMessage('What are the symptoms of diabetes?')">
-                            <i class="fas fa-question-circle"></i> Diabetes Symptoms
-                        </button>
-                        <button class="btn btn-secondary w-full text-left" onclick="sendQuickMessage('How to maintain a healthy diet?')">
-                            <i class="fas fa-apple-alt"></i> Healthy Diet Tips
-                        </button>
-                        <button class="btn btn-secondary w-full text-left" onclick="sendQuickMessage('What exercises are good for heart health?')">
-                            <i class="fas fa-heart"></i> Heart Health Exercise
-                        </button>
+                    <h4 class="font-semibold mb-2">Token Usage</h4>
+                    <div id="token-usage" class="text-sm text-gray-600">
+                        <div class="token-stats">
+                            <div class="token-stat">
+                                <span class="token-label">Input:</span>
+                                <span id="input-tokens" class="token-value">0</span>
+                            </div>
+                            <div class="token-stat">
+                                <span class="token-label">Output:</span>
+                                <span id="output-tokens" class="token-value">0</span>
+                            </div>
+                            <div class="token-stat">
+                                <span class="token-label">Total:</span>
+                                <span id="total-tokens" class="token-value">0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -126,9 +131,12 @@ function switchTab(tab) {
     }
 }
 
-function sendQuickMessage(message) {
-    document.getElementById('message-input').value = message;
-    sendMessage();
+function updateTokenUsage(tokenUsage) {
+    if (tokenUsage) {
+        document.getElementById('input-tokens').textContent = tokenUsage.input_tokens;
+        document.getElementById('output-tokens').textContent = tokenUsage.output_tokens;
+        document.getElementById('total-tokens').textContent = tokenUsage.total_tokens;
+    }
 }
 
 function handleKeyPress(event) {
@@ -173,6 +181,11 @@ function sendMessage() {
             const responseContent = data.response_html ? data.response_html : data.response;
             const useHTML = data.response_html ? true : false;
             addMessage(responseContent, 'bot', useHTML);
+            
+            // Update token usage if available
+            if (data.token_usage) {
+                updateTokenUsage(data.token_usage);
+            }
         }
     })
     .catch(error => {

@@ -189,7 +189,9 @@ def api_chat():
         
         logger.info(f"Processing chat message: {user_message[:50]}...")
         
-        response_markdown = chat(user_message)
+        response_data = chat(user_message)
+        response_markdown = response_data['content']
+        token_usage = response_data['token_usage']
         
         # Convert markdown to HTML with table support
         md = markdown.Markdown(extensions=['tables', 'fenced_code', 'nl2br'])
@@ -198,7 +200,8 @@ def api_chat():
         logger.info("Chat response generated successfully")
         return jsonify({
             'response': response_markdown,  # Raw markdown for copying
-            'response_html': response_html  # HTML for display
+            'response_html': response_html,  # HTML for display
+            'token_usage': token_usage  # Token usage information
         })
     
     except Exception as e:
@@ -228,7 +231,9 @@ def api_medical_chat():
         
         logger.info(f"Processing medical chat message: {user_message[:50]}...")
         
-        response_markdown = medical_docs(user_message, medical_history)
+        response_data = medical_docs(user_message, medical_history)
+        response_markdown = response_data['content']
+        token_usage = response_data['token_usage']
         
         # Convert markdown to HTML with table support
         md = markdown.Markdown(extensions=['tables', 'fenced_code', 'nl2br'])
@@ -237,7 +242,8 @@ def api_medical_chat():
         logger.info("Medical chat response generated successfully")
         return jsonify({
             'response': response_markdown,  # Raw markdown for copying
-            'response_html': response_html  # HTML for display
+            'response_html': response_html,  # HTML for display
+            'token_usage': token_usage  # Token usage information
         })
     
     except Exception as e:
@@ -305,7 +311,9 @@ def api_generate_meeting_minutes():
         
         logger.info(f"Processing meeting minutes for transcript: {len(transcript)} characters")
         
-        minutes_markdown = meeting_minutes(transcript)
+        response_data = meeting_minutes(transcript)
+        minutes_markdown = response_data['content']
+        token_usage = response_data['token_usage']
         
         # Convert markdown to HTML with table support
         md = markdown.Markdown(extensions=['tables', 'fenced_code', 'nl2br'])
@@ -314,7 +322,8 @@ def api_generate_meeting_minutes():
         logger.info("Meeting minutes generated successfully")
         return jsonify({
             'minutes': minutes_markdown,  # Raw markdown for copying/downloading
-            'minutes_html': minutes_html  # HTML for display
+            'minutes_html': minutes_html,  # HTML for display
+            'token_usage': token_usage  # Token usage information
         })
     
     except Exception as e:
@@ -344,17 +353,18 @@ def transcribe_audio():
         audio_file.save(file_path)
         logger.info(f"Audio file saved: {file_path}")
         
-        # Use speech recognition to transcribe (now expecting WAV from frontend)
-        import speech_recognition as sr
-        r = sr.Recognizer()
-        
+        # Initialize OpenAI client for Whisper API
+        from openai import OpenAI 
+        client = OpenAI(api_key="dpais", base_url="http://localhost:8553/v1/openai")
+
         try:
-            with sr.AudioFile(file_path) as source:
-                # Adjust for ambient noise
-                r.adjust_for_ambient_noise(source, duration=0.5)
-                audio_data = r.record(source)
-                transcript = r.recognize_google(audio_data)
-                logger.info("Transcription successful with WAV file")
+            # Speech recognition by Whisper
+            with open(file_path, "rb") as audio_file_handle:
+                transcript = client.audio.transcriptions.create(
+                    model="whisper",
+                    file=audio_file_handle
+                )
+            logger.info("Transcription successful with Whisper API")
         except Exception as transcription_error:
             logger.error(f"Transcription failed: {transcription_error}")
             raise Exception(f"Speech recognition failed: {str(transcription_error)}")
@@ -366,18 +376,17 @@ def transcribe_audio():
             except:
                 pass  # Ignore cleanup errors
         
-        if transcript:
+        if hasattr(transcript, 'text'):
+            transcript_text = transcript.text
+        else:
+            transcript_text = str(transcript)
+            
+        if transcript_text:
             logger.info("Audio transcription completed successfully")
-            return jsonify({'transcript': transcript})
+            return jsonify({'transcript': transcript_text})
         else:
             raise Exception("Failed to transcribe audio - no transcript generated")
     
-    except sr.UnknownValueError:
-        logger.warning("Speech recognition could not understand the audio")
-        return jsonify({'error': 'Could not understand the audio. Please speak more clearly and ensure good audio quality.'}), 400
-    except sr.RequestError as e:
-        logger.error(f"Speech recognition service error: {e}")
-        return jsonify({'error': 'Speech recognition service is unavailable. Please check your internet connection and try again.'}), 500
     except Exception as e:
         logger.error(f"Error in audio transcription: {str(e)}")
         # Clean up any remaining files

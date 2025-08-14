@@ -8,6 +8,14 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 
+from openai import OpenAI 
+client = OpenAI(api_key="dpais", base_url="http://localhost:8553/v1/openai")
+
+audio_file = open("speech.mp3", "rb") 
+transcript = client.audio.transcriptions.create(   model="whisper",   file=audio_file )
+
+print(transcript.text)
+
 
 try:
     p = pyaudio.PyAudio()
@@ -40,19 +48,27 @@ try:
     wf.writeframes(b''.join(frames))
     wf.close()
 
-    # Speech recognition
-    r = sr.Recognizer()
+    # OPTION A
+    # # Speech recognition by Google
+    # r = sr.Recognizer()
     
-    # FIXED: Properly open the audio file
-    with sr.AudioFile("output.wav") as source:
-        audio = r.record(source)
-        MyText = r.recognize_google(audio)
-        MyText = MyText.lower()
-        print(f"You said: {MyText}")
+    # # FIXED: Properly open the audio file
+    # with sr.AudioFile("output.wav") as source:
+    #     audio = r.record(source)
+    #     MyText = r.recognize_google(audio)
+    #     MyText = MyText.lower()
+    #     print(f"You said: {MyText}")
 
-except sr.UnknownValueError:
-    print("Speech recognition could not understand the audio")
-except sr.RequestError as e:
-    print(f"Could not request results from speech recognition service; {e}")
+    # OPTION B
+    # Speech recognition by Whisper
+    audio_file = open("output.wav", "rb") 
+    transcript = client.audio.transcriptions.create(   model="whisper",   file=audio_file )
+    print(transcript.text)
+
+# OPTION A
+# except sr.UnknownValueError:
+#     print("Speech recognition could not understand the audio")
+# except sr.RequestError as e:
+#     print(f"Could not request results from speech recognition service; {e}")
 except Exception as e:
     print(f"An error occurred: {e}")

@@ -1,21 +1,28 @@
 from generate import generate_response
 
-def medical_docs(user_input, medical_history):
+system_prompt = """
+You are an experienced healthcare assistant that specializes in analyzing medical documents and providing insights.
 
-    system_prompt = f"""
-    You are a medical doctor that is able to diagnose and treat a wide range of medical conditions.
-    
-    Respond in properly formatted markdown that includes:
-    - Clear headers for sections (## Diagnosis, ## Treatment Plan, ## Recommendations)
-    - Use tables when presenting structured information (medications, dosages, schedules)
-    - Use bullet points for symptoms, recommendations, and instructions
-    - Use proper markdown formatting for emphasis (*italic*, **bold**)
-    - Format medical information clearly and professionally
-    
-    Medical history: {medical_history}
-    
-    Ensure the markdown is well-structured, professional, and easy to read.
-    """
+When analyzing medical records:
+- Identify key medical information (diagnoses, medications, procedures, dates)
+- Highlight important findings and trends
+- Provide clear explanations of medical terms
+- Suggest follow-up questions or concerns to discuss with healthcare providers
+- Maintain patient privacy and confidentiality
 
-    response = generate_response(system_prompt, user_input)
-    return response
+Respond in properly formatted markdown that includes:
+- Clear headers for sections (## Analysis, ## Key Findings, ## Recommendations)
+- Use tables when presenting structured information
+- Use bullet points for lists and recommendations
+- Use proper markdown formatting for emphasis (*italic*, **bold**)
+- Format medical information clearly and professionally
+
+Always recommend consulting with healthcare professionals for medical decisions.
+"""
+
+def medical_docs(user_input, medical_history=""):
+    # Combine user input with medical history context
+    full_input = f"Medical History Context: {medical_history}\n\nUser Question: {user_input}"
+    
+    response_data = generate_response(system_prompt, full_input)
+    return response_data

@@ -15,8 +15,7 @@ Ensure the markdown is well-structured, professional, and easy to read.
 Note: Always recommend consulting with healthcare professionals for serious concerns.
 """
 
-user_input = "I have a headache"
 def chat(user_input):
-    response = generate_response(system_prompt, user_input)
-    return response
+    response_data = generate_response(system_prompt, user_input)
+    return response_data
 

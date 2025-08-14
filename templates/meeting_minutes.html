@@ -75,6 +75,25 @@
     <div class="minutes-text" id="minutes-text">
         <!-- Meeting minutes will be displayed here -->
     </div>
+    
+    <!-- Token Usage Section -->
+    <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <h4 class="font-semibold mb-2 text-blue-800">Token Usage</h4>
+        <div class="token-stats">
+            <div class="token-stat">
+                <span class="token-label">Input:</span>
+                <span id="input-tokens" class="token-value">0</span>
+            </div>
+            <div class="token-stat">
+                <span class="token-label">Output:</span>
+                <span id="output-tokens" class="token-value">0</span>
+            </div>
+            <div class="token-stat">
+                <span class="token-label">Total:</span>
+                <span id="total-tokens" class="token-value">0</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Instructions -->
@@ -492,6 +511,14 @@ function generateMinutes() {
             document.getElementById('minutes-text').innerHTML = minutesHtml;
             document.getElementById('minutes-container').classList.remove('hidden');
             document.getElementById('download-btn').classList.remove('hidden');
+            
+            // Update token usage if available
+            if (data.token_usage) {
+                document.getElementById('input-tokens').textContent = data.token_usage.input_tokens;
+                document.getElementById('output-tokens').textContent = data.token_usage.output_tokens;
+                document.getElementById('total-tokens').textContent = data.token_usage.total_tokens;
+            }
+            
             showNotification('Meeting minutes generated successfully!', 'success');
         }
     })
