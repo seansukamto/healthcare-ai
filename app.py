@@ -192,6 +192,9 @@ def api_chat():
         response_data = chat(user_message)
         response_markdown = response_data['content']
         token_usage = response_data['token_usage']
+        cost_data = response_data.get('cost_data', {})
+        cumulative_cost = response_data.get('cumulative_cost', 0.0)
+        commercial_costs = response_data.get('commercial_costs', {})
         
         # Convert markdown to HTML with table support
         md = markdown.Markdown(extensions=['tables', 'fenced_code', 'nl2br'])
@@ -201,7 +204,10 @@ def api_chat():
         return jsonify({
             'response': response_markdown,  # Raw markdown for copying
             'response_html': response_html,  # HTML for display
-            'token_usage': token_usage  # Token usage information
+            'token_usage': token_usage,  # Token usage information
+            'cost_data': cost_data,  # Cost breakdown
+            'commercial_costs': commercial_costs,  # Commercial API comparisons
+            'cumulative_cost': cumulative_cost  # Total cost so far
         })
     
     except Exception as e:
@@ -234,6 +240,9 @@ def api_medical_chat():
         response_data = medical_docs(user_message, medical_history)
         response_markdown = response_data['content']
         token_usage = response_data['token_usage']
+        cost_data = response_data.get('cost_data', {})
+        cumulative_cost = response_data.get('cumulative_cost', 0.0)
+        commercial_costs = response_data.get('commercial_costs', {})
         
         # Convert markdown to HTML with table support
         md = markdown.Markdown(extensions=['tables', 'fenced_code', 'nl2br'])
@@ -243,7 +252,10 @@ def api_medical_chat():
         return jsonify({
             'response': response_markdown,  # Raw markdown for copying
             'response_html': response_html,  # HTML for display
-            'token_usage': token_usage  # Token usage information
+            'token_usage': token_usage,  # Token usage information
+            'cost_data': cost_data,  # Cost breakdown
+            'commercial_costs': commercial_costs,  # Commercial API comparisons
+            'cumulative_cost': cumulative_cost  # Total cost so far
         })
     
     except Exception as e:
@@ -314,6 +326,9 @@ def api_generate_meeting_minutes():
         response_data = meeting_minutes(transcript)
         minutes_markdown = response_data['content']
         token_usage = response_data['token_usage']
+        cost_data = response_data.get('cost_data', {})
+        cumulative_cost = response_data.get('cumulative_cost', 0.0)
+        commercial_costs = response_data.get('commercial_costs', {})
         
         # Convert markdown to HTML with table support
         md = markdown.Markdown(extensions=['tables', 'fenced_code', 'nl2br'])
@@ -323,7 +338,10 @@ def api_generate_meeting_minutes():
         return jsonify({
             'minutes': minutes_markdown,  # Raw markdown for copying/downloading
             'minutes_html': minutes_html,  # HTML for display
-            'token_usage': token_usage  # Token usage information
+            'token_usage': token_usage,  # Token usage information
+            'cost_data': cost_data,  # Cost breakdown
+            'commercial_costs': commercial_costs,  # Commercial API comparisons
+            'cumulative_cost': cumulative_cost  # Total cost so far
         })
     
     except Exception as e:
@@ -397,6 +415,35 @@ def transcribe_audio():
         except:
             pass
         return jsonify({'error': f'Audio transcription failed: {str(e)}'}), 500
+
+@app.route('/api/cost-stats', methods=['GET'])
+def get_cost_stats():
+    """Get cumulative cost statistics"""
+    try:
+        from generate import load_cost_log
+        cost_data = load_cost_log()
+        return jsonify(cost_data)
+    except Exception as e:
+        logger.error(f"Error getting cost stats: {str(e)}")
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+@app.route('/api/reset-costs', methods=['POST'])
+def reset_costs():
+    """Reset cumulative cost data"""
+    try:
+        from generate import save_cost_log
+        reset_data = {
+            "total_cost": 0.0,
+            "total_tokens": 0,
+            "total_requests": 0,
+            "last_updated": datetime.now().isoformat()
+        }
+        save_cost_log(reset_data)
+        logger.info("Cost data reset successfully")
+        return jsonify({'message': 'Cost data reset successfully', 'cost_data': reset_data})
+    except Exception as e:
+        logger.error(f"Error resetting costs: {str(e)}")
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
 # Error handlers
 @app.errorhandler(404)

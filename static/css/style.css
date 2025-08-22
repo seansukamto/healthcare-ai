@@ -754,4 +754,47 @@ body {
     min-width: 2rem;
     text-align: center;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Cost Stats Styles */
+.cost-stats {
+    background: #f0fdf4;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid #bbf7d0;
+}
+
+.cost-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.cost-stat:last-child {
+    margin-bottom: 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid #bbf7d0;
+    font-weight: 600;
+}
+
+.cost-label {
+    color: var(--gray);
+    font-weight: 500;
+}
+
+.cost-value {
+    color: var(--success-green);
+    font-weight: 600;
+    background: var(--white);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    min-width: 3rem;
+    text-align: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.cost-value.text-green-600 {
+    color: var(--success-green);
 } 

@@ -28,7 +28,7 @@
                     <p class="text-sm text-gray-600">Ask me about general health questions, symptoms, or medical advice.</p>
                 </div>
                 <div class="mb-3">
-                    <h4 class="font-semibold mb-2">Token Usage</h4>
+                    <h4 class="font-semibold mb-2">Token Usage & Cost</h4>
                     <div id="token-usage" class="text-sm text-gray-600">
                         <div class="token-stats">
                             <div class="token-stat">
@@ -42,6 +42,20 @@
                             <div class="token-stat">
                                 <span class="token-label">Total:</span>
                                 <span id="total-tokens" class="token-value">0</span>
+                            </div>
+                        </div>
+                        <div class="cost-stats mt-2 pt-2 border-t border-gray-200">
+                            <div class="cost-stat">
+                                <span class="cost-label">Input Cost:</span>
+                                <span id="input-cost" class="cost-value">$0.00</span>
+                            </div>
+                            <div class="cost-stat">
+                                <span class="cost-label">Output Cost:</span>
+                                <span id="output-cost" class="cost-value">$0.00</span>
+                            </div>
+                            <div class="cost-stat">
+                                <span class="cost-label">Cost Savings:</span>
+                                <span id="cost-savings" class="cost-value">$0.00</span>
                             </div>
                         </div>
                     </div>
@@ -131,11 +145,31 @@ function switchTab(tab) {
     }
 }
 
-function updateTokenUsage(tokenUsage) {
+function updateTokenUsage(tokenUsage, costData, cumulativeCost, commercialCosts) {
     if (tokenUsage) {
         document.getElementById('input-tokens').textContent = tokenUsage.input_tokens;
         document.getElementById('output-tokens').textContent = tokenUsage.output_tokens;
         document.getElementById('total-tokens').textContent = tokenUsage.total_tokens;
+    }
+    
+    if (costData) {
+        const inputCost = costData.input_cost || 0;
+        const outputCost = costData.output_cost || 0;
+        const requestCost = costData.request_cost || 0;
+
+        // Compute savings vs primary commercial model if available (GPT-5), else fallback
+        let savings = 0;
+        if (commercialCosts && commercialCosts['gpt-5']) {
+            savings = (commercialCosts['gpt-5'].total_cost || 0) - requestCost;
+        } else if (tokenUsage) {
+            const fallbackInput = (tokenUsage.input_tokens / 1000) * 0.00125;
+            const fallbackOutput = (tokenUsage.output_tokens / 1000) * 0.01;
+            savings = (fallbackInput + fallbackOutput) - requestCost;
+        }
+
+        document.getElementById('input-cost').textContent = `$${inputCost.toFixed(6)}`;
+        document.getElementById('output-cost').textContent = `$${outputCost.toFixed(6)}`;
+        document.getElementById('cost-savings').textContent = `$${savings.toFixed(6)}`;
     }
 }
 
@@ -182,9 +216,9 @@ function sendMessage() {
             const useHTML = data.response_html ? true : false;
             addMessage(responseContent, 'bot', useHTML);
             
-            // Update token usage if available
+            // Update token usage and cost if available
             if (data.token_usage) {
-                updateTokenUsage(data.token_usage);
+                updateTokenUsage(data.token_usage, data.cost_data, data.cumulative_cost, data.commercial_costs);
             }
         }
     })

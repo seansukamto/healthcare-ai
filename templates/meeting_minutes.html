@@ -78,7 +78,7 @@
     
     <!-- Token Usage Section -->
     <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <h4 class="font-semibold mb-2 text-blue-800">Token Usage</h4>
+        <h4 class="font-semibold mb-2 text-blue-800">Token Usage & Cost</h4>
         <div class="token-stats">
             <div class="token-stat">
                 <span class="token-label">Input:</span>
@@ -91,6 +91,20 @@
             <div class="token-stat">
                 <span class="token-label">Total:</span>
                 <span id="total-tokens" class="token-value">0</span>
+            </div>
+        </div>
+        <div class="cost-stats mt-2 pt-2 border-t border-blue-200">
+            <div class="cost-stat">
+                <span class="cost-label">Input Cost:</span>
+                <span id="input-cost" class="cost-value">$0.00</span>
+            </div>
+            <div class="cost-stat">
+                <span class="cost-label">Output Cost:</span>
+                <span id="output-cost" class="cost-value">$0.00</span>
+            </div>
+            <div class="cost-stat">
+                <span class="cost-label">Cost Savings:</span>
+                <span id="cost-savings" class="cost-value">$0.00</span>
             </div>
         </div>
     </div>
@@ -512,11 +526,31 @@ function generateMinutes() {
             document.getElementById('minutes-container').classList.remove('hidden');
             document.getElementById('download-btn').classList.remove('hidden');
             
-            // Update token usage if available
+            // Update token usage and cost if available
             if (data.token_usage) {
                 document.getElementById('input-tokens').textContent = data.token_usage.input_tokens;
                 document.getElementById('output-tokens').textContent = data.token_usage.output_tokens;
                 document.getElementById('total-tokens').textContent = data.token_usage.total_tokens;
+                
+                // Update cost information
+                if (data.cost_data) {
+                    const inputCost = data.cost_data.input_cost || 0;
+                    const outputCost = data.cost_data.output_cost || 0;
+                    const requestCost = data.cost_data.request_cost || 0;
+
+                    let savings = 0;
+                    if (data.commercial_costs && data.commercial_costs['gpt-5']) {
+                        savings = (data.commercial_costs['gpt-5'].total_cost || 0) - requestCost;
+                    } else if (data.token_usage) {
+                        const fallbackInput = (data.token_usage.input_tokens / 1000) * 0.00125;
+                        const fallbackOutput = (data.token_usage.output_tokens / 1000) * 0.01;
+                        savings = (fallbackInput + fallbackOutput) - requestCost;
+                    }
+
+                    document.getElementById('input-cost').textContent = `$${inputCost.toFixed(6)}`;
+                    document.getElementById('output-cost').textContent = `$${outputCost.toFixed(6)}`;
+                    document.getElementById('cost-savings').textContent = `$${savings.toFixed(6)}`;
+                }
             }
             
             showNotification('Meeting minutes generated successfully!', 'success');
