@@ -21,10 +21,12 @@ client = OpenAI(api_key="dpais", base_url="http://localhost:8553/v1/openai")
 # Commercial API rates for comparison (2025 rates)
 COMMERCIAL_RATES = {
     "gpt-5": {
-        "cost_per_token": 0.005625  # Average of input ($0.00125/1K) and output ($0.01/1K) = $0.005625 per token
+        "input_cost_per_token": 0.00125,   # $1.25 per million tokens = $0.00125 per token
+        "output_cost_per_token": 0.01      # $10.00 per million tokens = $0.01 per token
     },
     "claude-4-sonnet": {
-        "cost_per_token": 0.009     # Average of input ($0.003/1K) and output ($0.015/1K) = $0.009 per token
+        "input_cost_per_token": 0.003,     # $3.00 per million tokens = $0.003 per token
+        "output_cost_per_token": 0.015     # $15.00 per million tokens = $0.015 per token
     }
 }
 
@@ -139,12 +141,13 @@ def calculate_cost(model_name, input_tokens, output_tokens, audio_duration_minut
         "request_cost": 0.0
     }
 
-def calculate_commercial_cost(total_tokens, commercial_model="gpt-5"):
+def calculate_commercial_cost(input_tokens, output_tokens, commercial_model="gpt-5"):
     """
     Calculate cost if using commercial APIs for comparison
     
     Args:
-        total_tokens: Total number of tokens (input + output)
+        input_tokens: Number of input tokens
+        output_tokens: Number of output tokens
         commercial_model: Commercial model to compare against
     
     Returns:
@@ -154,12 +157,19 @@ def calculate_commercial_cost(total_tokens, commercial_model="gpt-5"):
         commercial_model = "gpt-5"  # Default fallback
     
     rates = COMMERCIAL_RATES[commercial_model]
-    total_cost = total_tokens * rates["cost_per_token"]
+    
+    # Calculate separate input and output costs
+    input_cost = input_tokens * rates["input_cost_per_token"]
+    output_cost = output_tokens * rates["output_cost_per_token"]
+    total_cost = input_cost + output_cost
     
     return {
         "model": commercial_model,
+        "input_cost": round(input_cost, 6),
+        "output_cost": round(output_cost, 6),
         "total_cost": round(total_cost, 6),
-        "cost_per_token": rates["cost_per_token"]
+        "input_cost_per_token": rates["input_cost_per_token"],
+        "output_cost_per_token": rates["output_cost_per_token"]
     }
 
 def generate_response(system_prompt, user_input, audio_duration_minutes=None):
@@ -185,7 +195,7 @@ def generate_response(system_prompt, user_input, audio_duration_minutes=None):
     # Calculate commercial comparison costs
     commercial_costs = {}
     for model in ["gpt-5", "claude-4-sonnet"]:
-        commercial_costs[model] = calculate_commercial_cost(total_tokens, model)
+        commercial_costs[model] = calculate_commercial_cost(input_tokens, output_tokens, model)
     
     # Update cumulative cost log
     cost_log = load_cost_log()
