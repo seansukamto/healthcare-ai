@@ -21,12 +21,12 @@ client = OpenAI(api_key="dpais", base_url="http://localhost:8553/v1/openai")
 # Commercial API rates for comparison (2025 rates)
 COMMERCIAL_RATES = {
     "gpt-5": {
-        "input_cost_per_token": 0.00125,   # $1.25 per million tokens = $0.00125 per token
-        "output_cost_per_token": 0.01      # $10.00 per million tokens = $0.01 per token
+        "input_cost_per_token": 0.00000125,   # $1.25 per million tokens = $0.00000125 per token
+        "output_cost_per_token": 0.00001      # $10.00 per million tokens = $0.00001 per token
     },
     "claude-4-sonnet": {
-        "input_cost_per_token": 0.003,     # $3.00 per million tokens = $0.003 per token
-        "output_cost_per_token": 0.015     # $15.00 per million tokens = $0.015 per token
+        "input_cost_per_token": 0.000003,     # $3.00 per million tokens = $0.000003 per token
+        "output_cost_per_token": 0.000015     # $15.00 per million tokens = $0.000015 per token
     }
 }
 
