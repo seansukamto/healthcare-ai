@@ -95,16 +95,12 @@
         </div>
         <div class="cost-stats mt-2 pt-2 border-t border-blue-200">
             <div class="cost-stat">
-                <span class="cost-label">Input Cost:</span>
-                <span id="input-cost" class="cost-value">$0.00</span>
+                <span class="cost-label">vs GPT-5:</span>
+                <span id="gpt5-savings" class="cost-value">$0.00</span>
             </div>
             <div class="cost-stat">
-                <span class="cost-label">Output Cost:</span>
-                <span id="output-cost" class="cost-value">$0.00</span>
-            </div>
-            <div class="cost-stat">
-                <span class="cost-label">Cost Savings:</span>
-                <span id="cost-savings" class="cost-value">$0.00</span>
+                <span class="cost-label">vs Claude-4:</span>
+                <span id="claude4-savings" class="cost-value">$0.00</span>
             </div>
         </div>
     </div>
@@ -532,24 +528,13 @@ function generateMinutes() {
                 document.getElementById('output-tokens').textContent = data.token_usage.output_tokens;
                 document.getElementById('total-tokens').textContent = data.token_usage.total_tokens;
                 
-                // Update cost information
-                if (data.cost_data) {
-                    const inputCost = data.cost_data.input_cost || 0;
-                    const outputCost = data.cost_data.output_cost || 0;
-                    const requestCost = data.cost_data.request_cost || 0;
-
-                    let savings = 0;
-                    if (data.commercial_costs && data.commercial_costs['gpt-5']) {
-                        savings = (data.commercial_costs['gpt-5'].total_cost || 0) - requestCost;
-                    } else if (data.token_usage) {
-                        const fallbackInput = (data.token_usage.input_tokens / 1000) * 0.00125;
-                        const fallbackOutput = (data.token_usage.output_tokens / 1000) * 0.01;
-                        savings = (fallbackInput + fallbackOutput) - requestCost;
-                    }
-
-                    document.getElementById('input-cost').textContent = `$${inputCost.toFixed(6)}`;
-                    document.getElementById('output-cost').textContent = `$${outputCost.toFixed(6)}`;
-                    document.getElementById('cost-savings').textContent = `$${savings.toFixed(6)}`;
+                // Update cost savings information
+                if (data.commercial_costs) {
+                    const gpt5Savings = data.commercial_costs['gpt-5'] ? data.commercial_costs['gpt-5'].total_cost : 0;
+                    const claude4Savings = data.commercial_costs['claude-4-sonnet'] ? data.commercial_costs['claude-4-sonnet'].total_cost : 0;
+                    
+                    document.getElementById('gpt5-savings').textContent = `$${gpt5Savings.toFixed(6)}`;
+                    document.getElementById('claude4-savings').textContent = `$${claude4Savings.toFixed(6)}`;
                 }
             }
             

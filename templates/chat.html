@@ -46,16 +46,12 @@
                         </div>
                         <div class="cost-stats mt-2 pt-2 border-t border-gray-200">
                             <div class="cost-stat">
-                                <span class="cost-label">Input Cost:</span>
-                                <span id="input-cost" class="cost-value">$0.00</span>
+                                <span class="cost-label">vs GPT-5:</span>
+                                <span id="gpt5-savings" class="cost-value">$0.00</span>
                             </div>
                             <div class="cost-stat">
-                                <span class="cost-label">Output Cost:</span>
-                                <span id="output-cost" class="cost-value">$0.00</span>
-                            </div>
-                            <div class="cost-stat">
-                                <span class="cost-label">Cost Savings:</span>
-                                <span id="cost-savings" class="cost-value">$0.00</span>
+                                <span class="cost-label">vs Claude-4:</span>
+                                <span id="claude4-savings" class="cost-value">$0.00</span>
                             </div>
                         </div>
                     </div>
@@ -152,24 +148,13 @@ function updateTokenUsage(tokenUsage, costData, cumulativeCost, commercialCosts)
         document.getElementById('total-tokens').textContent = tokenUsage.total_tokens;
     }
     
-    if (costData) {
-        const inputCost = costData.input_cost || 0;
-        const outputCost = costData.output_cost || 0;
-        const requestCost = costData.request_cost || 0;
-
-        // Compute savings vs primary commercial model if available (GPT-5), else fallback
-        let savings = 0;
-        if (commercialCosts && commercialCosts['gpt-5']) {
-            savings = (commercialCosts['gpt-5'].total_cost || 0) - requestCost;
-        } else if (tokenUsage) {
-            const fallbackInput = (tokenUsage.input_tokens / 1000) * 0.00125;
-            const fallbackOutput = (tokenUsage.output_tokens / 1000) * 0.01;
-            savings = (fallbackInput + fallbackOutput) - requestCost;
-        }
-
-        document.getElementById('input-cost').textContent = `$${inputCost.toFixed(6)}`;
-        document.getElementById('output-cost').textContent = `$${outputCost.toFixed(6)}`;
-        document.getElementById('cost-savings').textContent = `$${savings.toFixed(6)}`;
+    if (commercialCosts) {
+        // Show cost savings vs GPT-5 and Claude-4-Sonnet
+        const gpt5Savings = commercialCosts['gpt-5'] ? commercialCosts['gpt-5'].total_cost : 0;
+        const claude4Savings = commercialCosts['claude-4-sonnet'] ? commercialCosts['claude-4-sonnet'].total_cost : 0;
+        
+        document.getElementById('gpt5-savings').textContent = `$${gpt5Savings.toFixed(6)}`;
+        document.getElementById('claude4-savings').textContent = `$${claude4Savings.toFixed(6)}`;
     }
 }
 
