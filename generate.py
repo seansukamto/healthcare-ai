@@ -18,8 +18,9 @@ client = OpenAI(api_key="dpais", base_url="http://localhost:8553/v1/openai")
 
 # Cost configuration for different models (driven by per-token env variables)
 # QWEN per-token rates (defaults can be overridden via environment variables)
-_QWEN_INPUT_COST_PER_TOKEN = float(os.environ.get("QWEN_INPUT_COST_PER_TOKEN", "0.0000001"))
-_QWEN_OUTPUT_COST_PER_TOKEN = float(os.environ.get("QWEN_OUTPUT_COST_PER_TOKEN", "0.0000001"))
+# For local deployment, cost should be $0 since you're not paying external API fees
+_QWEN_INPUT_COST_PER_TOKEN = float(os.environ.get("QWEN_INPUT_COST_PER_TOKEN", "0.0"))
+_QWEN_OUTPUT_COST_PER_TOKEN = float(os.environ.get("QWEN_OUTPUT_COST_PER_TOKEN", "0.0"))
 
 MODEL_COSTS = {
     "qwen2.5": {
@@ -28,7 +29,8 @@ MODEL_COSTS = {
         "output_cost_per_1k_tokens": _QWEN_OUTPUT_COST_PER_TOKEN * 1000.0
     },
     "whisper": {
-        "cost_per_minute": float(os.environ.get("WHISPER_COST_PER_MINUTE", "0.006"))
+        # For local deployment, cost should be $0 since you're not paying external API fees
+        "cost_per_minute": float(os.environ.get("WHISPER_COST_PER_MINUTE", "0.0"))
     }
 }
 
